@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<title>到期提醒</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#f4f6f8; --card:#ffffff; --text:#16202a; --muted:#6b7a88;
+  --line:#e3e8ed; --brand:#0f766e; --brand-soft:#e2f3f0;
+  --danger:#c2333a; --danger-soft:#fdeaea;
+  --warn:#a35b00; --warn-soft:#fdf1de;
+  --ok:#1f6b3a; --ok-soft:#e6f4ea;
+  --shadow:0 1px 2px rgba(16,32,44,.06),0 6px 18px rgba(16,32,44,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#12161a; --card:#1b2126; --text:#e9eef2; --muted:#9aa8b4;
+    --line:#2a333a; --brand:#3fb9a8; --brand-soft:#16332f;
+    --danger:#ff8b8b; --danger-soft:#3a2023;
+    --warn:#f0b464; --warn-soft:#3a2e1b;
+    --ok:#7fd39c; --ok-soft:#1c3227;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.35);
+  }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:system-ui,-apple-system,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  font-size:16px;line-height:1.5;
+  padding-bottom:calc(84px + env(safe-area-inset-bottom));
+}
+button,input,select,textarea{font:inherit;color:inherit}
+header{
+  position:sticky;top:0;z-index:20;background:var(--brand);color:#fff;
+  padding:calc(10px + env(safe-area-inset-top)) 14px 10px;box-shadow:var(--shadow);
+}
+header .row{display:flex;align-items:center;gap:10px}
+header h1{font-size:18px;margin:0;font-weight:700;letter-spacing:.5px;flex:1}
+header .sub{font-size:12px;opacity:.85;margin-top:2px}
+.icon-btn{background:rgba(255,255,255,.16);border:0;color:#fff;border-radius:10px;
+  width:38px;height:38px;display:grid;place-items:center;font-size:18px}
+main{padding:12px 12px 0;max-width:720px;margin:0 auto}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 8px;text-align:center;box-shadow:var(--shadow)}
+.stat b{display:block;font-size:20px;line-height:1.2}
+.stat span{font-size:11px;color:var(--muted)}
+.stat.d b{color:var(--danger)} .stat.w b{color:var(--warn)} .stat.o b{color:var(--ok)}
+.toolbar{display:flex;gap:8px;margin-bottom:10px}
+.toolbar input,.toolbar select{
+  flex:1;min-width:0;background:var(--card);border:1px solid var(--line);
+  border-radius:12px;padding:10px 12px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:10px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{white-space:nowrap;border:1px solid var(--line);background:var(--card);
+  border-radius:999px;padding:7px 14px;font-size:14px}
+.chip.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.group-title{font-size:13px;color:var(--muted);margin:14px 4px 8px;font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:12px;margin-bottom:10px;box-shadow:var(--shadow);display:flex;gap:12px;align-items:center}
+.card .bar{width:4px;align-self:stretch;border-radius:4px;background:var(--ok)}
+.card.exp .bar{background:var(--danger)} .card.soon .bar{background:var(--warn)}
+.card .body{flex:1;min-width:0}
+.card .name{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card .meta{font-size:12.5px;color:var(--muted);margin-top:3px}
+.badge{font-size:12px;padding:4px 9px;border-radius:999px;font-weight:700;white-space:nowrap;
+  background:var(--ok-soft);color:var(--ok)}
+.badge.exp{background:var(--danger-soft);color:var(--danger)}
+.badge.soon{background:var(--warn-soft);color:var(--warn)}
+.tag{display:inline-block;background:var(--brand-soft);color:var(--brand);
+  border-radius:6px;padding:1px 7px;font-size:11.5px;margin-right:6px;font-weight:600}
+.tag.rep{background:var(--warn-soft);color:var(--warn)}
+.banner{display:none;gap:10px;align-items:flex-start;background:var(--warn-soft);
+  border:1px solid var(--warn);border-radius:14px;padding:12px;margin-bottom:12px}
+.banner.on{display:flex}
+.banner-body{flex:1;min-width:0}
+.banner-t{font-weight:700;color:var(--warn);font-size:15px}
+.banner-b{font-size:13px;color:var(--text);margin-top:4px;line-height:1.5}
+.banner-x{border:1px solid var(--warn);background:transparent;color:var(--warn);
+  border-radius:10px;padding:7px 11px;font-size:13px;font-weight:700;white-space:nowrap}
+.thumb{width:54px;height:54px;border-radius:10px;object-fit:cover;background:var(--line);flex:0 0 54px}
+.photo-row{display:flex;gap:12px;align-items:flex-start}
+.photo-box{width:104px;height:104px;flex:0 0 104px;border:1px dashed var(--line);border-radius:14px;
+  display:grid;place-items:center;overflow:hidden;background:var(--card);color:var(--muted);font-size:12px;text-align:center}
+.photo-box img{width:100%;height:100%;object-fit:cover}
+.photo-btns{flex:1;display:flex;flex-direction:column;gap:8px}
+.photo-btns .btn{padding:11px;font-size:14px}
+.lightbox{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.9);display:none;
+  align-items:center;justify-content:center;padding:16px}
+.lightbox.on{display:flex}
+.lightbox img{max-width:100%;max-height:88vh;border-radius:12px}
+.card .right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.act{border:1px solid var(--line);background:var(--card);color:var(--muted);
+  border-radius:10px;padding:6px 10px;font-size:12.5px;font-weight:600;white-space:nowrap}
+.act.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.card.done{opacity:.72}
+.card.done .bar{background:var(--muted)}
+.card.done .name{text-decoration:line-through;color:var(--muted)}
+.empty{text-align:center;color:var(--muted);padding:52px 20px;font-size:14px}
+.empty .big{font-size:40px;margin-bottom:10px}
+.fab{position:fixed;right:16px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:30;
+  background:var(--brand);color:#fff;border:0;border-radius:18px;height:56px;padding:0 20px;
+  font-size:16px;font-weight:700;box-shadow:0 6px 20px rgba(15,118,110,.4)}
+.sheet{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.45);display:none;
+  align-items:flex-end;justify-content:center}
+.sheet.on{display:flex}
+.sheet-inner{background:var(--bg);width:100%;max-width:720px;max-height:92vh;overflow:auto;
+  border-radius:18px 18px 0 0;padding:16px 16px calc(24px + env(safe-area-inset-bottom))}
+.sheet h2{margin:2px 0 14px;font-size:17px}
+label{display:block;font-size:13px;color:var(--muted);margin:12px 0 6px;font-weight:600}
+input[type=text],input[type=date],input[type=time],input[type=number],select,textarea{
+  width:100%;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+textarea{min-height:64px;resize:vertical}
+.row2{display:flex;gap:8px}
+.row2>*{flex:1;min-width:0}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opt{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 14px;font-size:14px}
+.opt.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.btns{display:flex;gap:10px;margin-top:20px}
+.btn{flex:1;border:0;border-radius:14px;padding:14px;font-weight:700;font-size:16px;
+  background:var(--brand);color:#fff}
+.btn.ghost{background:var(--card);color:var(--text);border:1px solid var(--line)}
+.btn.danger{background:var(--danger-soft);color:var(--danger)}
+.list-row{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);
+  border-radius:12px;padding:10px 12px;margin-bottom:8px}
+.list-row .n{flex:1;font-weight:600}
+.list-row .c{font-size:12px;color:var(--muted)}
+.mini{background:transparent;border:1px solid var(--line);border-radius:9px;padding:6px 10px;font-size:13px}
+.mini.d{color:var(--danger);border-color:var(--danger-soft)}
+.note{font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.6}
+.switch{display:flex;align-items:center;justify-content:space-between;
+  background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px}
+.switch input{width:auto;transform:scale(1.4);margin-left:10px}
+.sec{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:var(--shadow)}
+.sec h3{margin:0 0 4px;font-size:15px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:100px;z-index:99;
+  background:#16202a;color:#fff;padding:11px 18px;border-radius:12px;font-size:14px;
+  opacity:0;transition:opacity .25s;pointer-events:none;max-width:88vw;text-align:center}
+.toast.on{opacity:.95}
+.suggest{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.suggest button{border:1px dashed var(--line);background:transparent;color:var(--muted);
+  border-radius:999px;padding:5px 11px;font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <div class="row">
+    <div style="flex:1">
+      <h1>到期提醒</h1>
+      <div class="sub" id="today"></div>
+    </div>
+    <button class="icon-btn" id="btnCats" title="種類管理">☰</button>
+    <button class="icon-btn" id="btnSettings" title="設定">⚙</button>
+  </div>
+</header>
+
+<main>
+  <div class="banner" id="banner">
+    <div class="banner-body">
+      <div class="banner-t" id="bannerT"></div>
+      <div class="banner-b" id="bannerB"></div>
+    </div>
+    <button class="banner-x" id="bannerClose">知道了</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat d"><b id="sExp">0</b><span>已過期</span></div>
+    <div class="stat w"><b id="sSoon">0</b><span>即將到期</span></div>
+    <div class="stat o"><b id="sOk">0</b><span>正常</span></div>
+  </div>
+
+  <div class="toolbar">
+    <input type="text" id="q" placeholder="搜尋項目…">
+    <select id="sort" style="flex:0 0 40%">
+      <option value="date">依到期日</option>
+      <option value="cat">依種類</option>
+      <option value="name">依名稱</option>
+    </select>
+  </div>
+
+  <div class="chips" id="catChips"></div>
+  <div id="list"></div>
+</main>
+
+<button class="fab" id="btnAdd">＋ 新增項目</button>
+
+<!-- 新增/編輯項目 -->
+<div class="sheet" id="shItem"><div class="sheet-inner">
+  <h2 id="itemTitle">新增項目</h2>
+  <label>項目名稱</label>
+  <input type="text" id="fName" placeholder="例如：洗髮精">
+  <div class="suggest" id="suggest"></div>
+
+  <label>照片（方便辨識，選填）</label>
+  <div class="photo-row">
+    <div class="photo-box" id="photoPrev"><span>尚未加照片</span></div>
+    <div class="photo-btns">
+      <button class="btn ghost" id="btnPhotoCam">📷 拍照</button>
+      <button class="btn ghost" id="btnPhotoPick">🖼️ 從相簿選</button>
+      <button class="btn ghost" id="btnPhotoDel">移除照片</button>
+    </div>
+  </div>
+  <input type="file" id="filePhotoCam" accept="image/*" capture="environment" style="display:none">
+  <input type="file" id="filePhotoPick" accept="image/*" style="display:none">
+
+  <label>種類</label>
+  <div class="row2">
+    <select id="fCat"></select>
+    <button class="btn ghost" id="btnNewCatInline" style="flex:0 0 96px;padding:12px">＋種類</button>
+  </div>
+
+  <div class="row2">
+    <div>
+      <label>到期日</label>
+      <input type="date" id="fDate">
+    </div>
+    <div>
+      <label>數量（可留空）</label>
+      <input type="text" id="fQty" placeholder="例如：2 瓶">
+    </div>
+  </div>
+
+  <label>提醒區間（可複選，到期前幾天提醒）</label>
+  <div class="opts" id="fOffsets"></div>
+  <div class="row2" style="margin-top:8px">
+    <input type="number" id="fCustom" min="1" max="3650" placeholder="自訂天數">
+    <button class="btn ghost" id="btnAddOffset" style="flex:0 0 110px;padding:12px">加入</button>
+  </div>
+
+  <label>重複週期（例如每 3 個月換一次濾心）</label>
+  <div class="opts" id="fRepeat"></div>
+  <div class="row2" style="margin-top:8px">
+    <input type="number" id="fRepCustom" min="1" max="3650" placeholder="自訂天數">
+    <button class="btn ghost" id="btnRepCustom" style="flex:0 0 110px;padding:12px">設定</button>
+  </div>
+  <div class="note">設了週期後，清單上的按鈕會變成「🔁 已更換」，按一下就自動把到期日往後推一個週期。</div>
+
+  <label>備註</label>
+  <textarea id="fNote" placeholder="放在哪裡、批號、購買日…"></textarea>
+
+  <div class="btns">
+    <button class="btn ghost" id="itemCancel">取消</button>
+    <button class="btn" id="itemSave">儲存</button>
+  </div>
+  <div class="btns" id="itemDeleteWrap" style="display:none">
+    <button class="btn danger" id="itemDelete">刪除此項目</button>
+  </div>
+</div></div>
+
+<!-- 種類管理 -->
+<div class="sheet" id="shCats"><div class="sheet-inner">
+  <h2>種類管理</h2>
+  <div id="catList"></div>
+  <label>新增種類</label>
+  <div class="row2">
+    <input type="text" id="newCat" placeholder="例如：藥品">
+    <button class="btn" id="btnAddCat" style="flex:0 0 110px;padding:12px">新增</button>
+  </div>
+  <div class="note">刪除種類時，底下的項目會一併刪除，請先確認。</div>
+  <div class="btns"><button class="btn ghost" id="catsClose">關閉</button></div>
+</div></div>
+
+<!-- 設定 -->
+<div class="sheet" id="shSet"><div class="sheet-inner">
+  <h2>設定</h2>
+
+  <div class="sec">
+    <h3>通知</h3>
+    <div class="switch">
+      <span>每日固定時間通知</span>
+      <input type="checkbox" id="sNotify">
+    </div>
+    <label>每日通知時間</label>
+    <input type="time" id="sTime">
+    <div class="note" id="permNote"></div>
+    <div class="btns" style="margin-top:10px">
+      <button class="btn ghost" id="btnPerm">開啟通知權限</button>
+      <button class="btn ghost" id="btnTest">測試通知</button>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h3>預設提醒區間</h3>
+    <div class="note" style="margin-top:0">新增項目時會自動帶入這些天數。</div>
+    <div class="opts" id="sOffsets" style="margin-top:10px"></div>
+    <div class="row2" style="margin-top:8px">
+      <input type="number" id="sCustom" min="1" max="3650" placeholder="自訂天數">
+      <button class="btn ghost" id="btnAddDefOffset" style="flex:0 0 110px;padding:12px">加入</button>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h3>資料備份</h3>
+    <div class="btns" style="margin-top:8px">
+      <button class="btn ghost" id="btnExport">匯出備份</button>
+      <button class="btn ghost" id="btnImport">匯入備份</button>
+    </div>
+    <input type="file" id="fileImport" accept="application/json" style="display:none">
+    <div class="btns"><button class="btn danger" id="btnClear">清除所有資料</button></div>
+  </div>
+
+  <div class="btns"><button class="btn ghost" id="setClose">關閉</button></div>
+</div></div>
+
+<div class="lightbox" id="lightbox"><img id="lightboxImg" alt=""></div>
+<div class="toast" id="toast"></div>
+<script src="app.js"></script>
+</body>
+</html>
